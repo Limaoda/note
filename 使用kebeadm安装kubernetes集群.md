@@ -1,4 +1,4 @@
-## 使用kebeadm安装kubernetes集群
+## 安装kubernetes集群
 
 #### 1、kubernetes部署环境准备
 
@@ -17,8 +17,8 @@ sed -ri 's/.*swap.*/#&/' /etc/fstab # 永久
 
 # 在master添加hosts(可选)
 cat >> /etc/hosts << EOF
-10.254.8.4 k8smaster
-10.254.8.5 k8snode
+192.168.79.128 k8smaster
+192.168.79.129 k8snode
 EOF
 
 # 设置网桥参数
@@ -32,4 +32,65 @@ sudo sysctl --system
 yum install ntpdate -y
 ntpdate time.windows.com
 ```
+
+#### 2、安装Docker
+
+> 见Docker和K8S集群文件
+
+#### 3、安装kubeadm、kubelet、kubectl
+
+```shell
+# 添加k8s的阿里云yum源
+cat > /etc/yum.repos.d/kubernetes.repo << EOF
+[kubernetes]
+name=Kubernetes
+baseurl=https://mirrors.aliyun.com/kubernetes/yum/repos/kubernetes-el7-x86_64
+enabled=1
+gpgcheck=0
+repo_gpgcheck=0
+gpgkey=https://mirrors.aliyun.com/kubernetes/yum/doc/yum-key.gpg
+https://mirrors.aliyun.com/kubernetes/yum/doc/rpm-package-key.gpg
+EOF
+
+# 使用yum安装kubeadm、kubelet、kubectl
+yum install kubelet-1.19.4 kubeadm-1.19.4 kubectl-1.19.4 -y
+
+# 执行
+systemctl enable kubelet.service
+
+#查看三个工具是否成功安装
+yum list installed | grep kubelet
+yum list installed | grep kubeadm
+yum list installed | grep kubectl
+
+# 查看安装的版本：
+kubelete --version
+kubeadm --version
+kubectl --version
+```
+
+* **Kubelet**：运行在cluster（集群）所有节点（由Master节点的API Server控制）上，负责**启动POD和容器**
+
+* **Kubeadm**：用于**初始化**cluster（集群）的一个工具
+
+* **Kubectl**：kubectl是**kubenetes命令行工具**，通过kubectl可以部署和管理应用，查看各种资源，创建，删除和更新组件；
+
+#### 4、部署Kubernetes Master主节点
+
+```shell
+# 10.254.8.4为部署Master节点的机器ip地址
+# 如果报错，有可能是环境准备阶段的配置没有立即生效，reboot重启主机再重新执行kubeadm init命令即可
+kubeadm init --apiserver-advertise-address=10.254.8.4 --image-repository registry.aliyuncs.com/google_containers --kubernetes-version v1.19.4 --service-cidr=10.96.0.0/12 --pod-network-cidr=10.244.0.0/16
+
+# kubeadm实际上做了一些脚本封装，包括拉取运行kebernetes所需要的一些镜像，安全证书配置等，当出现successful后，进行下一步
+mkdir -p $HOME/.kube 
+
+sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+
+sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+kubectl get nodes
+```
+
+
 
