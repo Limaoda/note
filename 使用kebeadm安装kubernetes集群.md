@@ -33,6 +33,7 @@ yum install ntpdate -y
 ntpdate time.windows.com
 ```
 
+<<<<<<< Updated upstream
 #### 2、安装Docker
 
 > 见Docker和K8S集群文件
@@ -91,6 +92,4 @@ sudo chown $(id -u):$(id -g) $HOME/.kube/config
 
 kubectl get nodes
 ```
-
-
 
