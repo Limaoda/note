@@ -25,7 +25,7 @@ sudo yum install -y yum-utils
 #使用阿里国内源安装docker
 yum-config-manager --add-repo http://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo
 
-#安装docker引擎
+#安装docker引擎，版本为
 sudo yum install docker-ce docker-ce-cli containerd.io
 
 #启动docker
@@ -39,6 +39,10 @@ systemctl restart docker
 
 #设置docker开机自启
 systemctl enable docker
+
+#删除docker
+yum -y remove docker.ce.x86_64 docker-ce-cli.x86_64 docker-ce.rootless-extras.x86_64 docker-scan-plugin.x86_64 containerd.io.x86_64
+
 ```
 
 

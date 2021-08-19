@@ -17,8 +17,8 @@ sed -ri 's/.*swap.*/#&/' /etc/fstab # 永久
 
 # 在master添加hosts(可选)
 cat >> /etc/hosts << EOF
-192.168.79.128 k8smaster
-192.168.79.129 k8snode
+192.168.79.132 k8smaster
+192.168.79.133 k8snode
 EOF
 
 # 设置网桥参数
@@ -33,7 +33,6 @@ yum install ntpdate -y
 ntpdate time.windows.com
 ```
 
-<<<<<<< Updated upstream
 #### 2、安装Docker
 
 > 见Docker和K8S集群文件
@@ -65,9 +64,7 @@ yum list installed | grep kubeadm
 yum list installed | grep kubectl
 
 # 查看安装的版本：
-kubelete --version
-kubeadm --version
-kubectl --version
+kubelet --version
 ```
 
 * **Kubelet**：运行在cluster（集群）所有节点（由Master节点的API Server控制）上，负责**启动POD和容器**
@@ -79,9 +76,11 @@ kubectl --version
 #### 4、部署Kubernetes Master主节点
 
 ```shell
-# 10.254.8.4为部署Master节点的机器ip地址
+# 192.168.79.132为部署Master节点的机器ip地址
 # 如果报错，有可能是环境准备阶段的配置没有立即生效，reboot重启主机再重新执行kubeadm init命令即可
-kubeadm init --apiserver-advertise-address=10.254.8.4 --image-repository registry.aliyuncs.com/google_containers --kubernetes-version v1.19.4 --service-cidr=10.96.0.0/12 --pod-network-cidr=10.244.0.0/16
+echo 1 > /proc/sys/net/ipv4/ip_forward
+
+kubeadm init --apiserver-advertise-address=192.168.79.132 --image-repository registry.aliyuncs.com/google_containers --kubernetes-version v1.19.4 --service-cidr=10.96.0.0/12 --pod-network-cidr=10.244.0.0/16
 
 # kubeadm实际上做了一些脚本封装，包括拉取运行kebernetes所需要的一些镜像，安全证书配置等，当出现successful后，进行下一步
 mkdir -p $HOME/.kube 
@@ -92,4 +91,23 @@ sudo chown $(id -u):$(id -g) $HOME/.kube/config
 
 kubectl get nodes
 ```
+
+#### 5、将node节点加入Kubernetes master节点
+
+```shell
+# 生成永久token
+kubeadm token create --ttl 0
+#jj3bvz.h8iwxt6uuhi1s4qp
+
+# 查看ca证书sha256编码hash值
+openssl x509 -pubkey -in /etc/kubernetes/pki/ca.crt | openssl rsa -pubin -outform der 2>/dev/null | openssl dgst -sha256 -hex | sed 's/^.* //'
+sha256:1d347c2e695d67a0db41538a62f3407d97d8c476bae4fcfb756349f406bf4981 xv
+
+# 在node节点机器上执行，将node节点加入k8s集群中
+kubeadm join 192.168.79.132:6443 --token jj3bvz.h8iwxt6uuhi1s4qp \
+    --discovery-token-ca-cert-hash sha256:1d347c2e695d67a0db41538a62f3407d97d8c476bae4fcfb756349f406bf4981 --v=2
+
+```
+
+
 
