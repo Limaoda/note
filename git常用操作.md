@@ -27,6 +27,11 @@ git remote add <远程主机名> <远程仓库url>
 # 例子
 git remote add origin git@e.coding.net:huaixin/java_study/web_demo.git
 
+# 移除远程仓库关联
+git remote rm <远程主机名>
+# 例子
+git remote rm origin
+
 # 将本地仓库内容推送至远程仓库
 git push <远程主机名> <本地分支名> <远程仓库分支名>
 # 例子
