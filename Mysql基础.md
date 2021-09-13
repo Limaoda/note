@@ -331,6 +331,8 @@ ALTER TABLE `user` ADD CONSTRAINT `FK_roleId` FOREIGN KEY (`roleId`) REFERENCES 
 
 ### 3、DQL查询数据
 
+#### 3.1、基本查询
+
 ```sql
 -- 查询语句 SELECT
 -- SELECT [字段] FROM `表名`
@@ -345,5 +347,129 @@ SELECT `studentname` AS 名字,`address` AS 地址 FROM `student`; -- 查询stud
 
 -- concat函数
 SELECT CONCAT('学生名：',studentname),CONCAT('学生地址：',address) FROM `student`;  -- 查询student表的studentname列和address列并在字段值前拼接字符串
+
+-- 去重查询
+SELECT DISTINCT `studentno` FROM `result`; -- 从result表中查出studentno数据列并进行去重
+
+-- 查询mysql系统版本
+SELECT VERSION();
+
+-- 查询计算值
+SELECT (1000-1)*3 AS 计算结果;
+
+-- 查询变量
+SELECT @@auto_increment_increment; -- 查询自增步长变量
+```
+
+#### 3.2、条件查询
+
+> 逻辑运算符
+
+| 运算符    | 语法          | 描述 |
+| --------- | ------------- | ---- |
+| and   &&  | a and b a&&b  | 并集 |
+| or   \|\| | a or b a\|\|b | 交集 |
+| Not   ！  | not a   !a    | 非   |
+
+
+
+```sql
+-- 条件查询 SELECT...WHERE...
+-- SELECT `字段名1`,[字段名2]`,... FROM 表名 WHERE [筛选条件]
+SELECT `studentno`,`studentresult` FROM result WHERE `studentresult`>=70 AND `studentresult`<=90; -- 查询result表studentresult字段值位于70到90区间内的studentno列和studentresult列
+
+SELECT `studentno`,`studentresult` FROM result WHERE NOT studentno=1000; -- 查询result表studentno字段值不等于1000的studentno列和studentresult列
+```
+
+> 模糊查询：比较运算符
+
+| 运算符      | 语法              | 描述                                  |
+| ----------- | ----------------- | ------------------------------------- |
+| IS NULL     | a is null         | 如果操作符为null，结果为真            |
+| IS NOT NULL | a is not null     | 如果操作符不为null，结果为真          |
+| BETWEEN     | a between b and c | 若a在b和c之间，结果为真               |
+| **Like**    | a like b          | SQL匹配，如果a匹配b，结果为真         |
+| In          | a in (a1,a2,a3)   | 包含，a被包含于(a1,a2,a3)中，结果为真 |
+
+```sql
+-- like和%或_结合的模糊查询(%表示任意个数的任意字符 _表示一个任意字符)
+
+SELECT * FROM student WHERE `studentname` LIKE '赵%'; -- 查询student表中studentname开头为赵字的所有列
+
+SELECT * FROM student WHERE `studentname` LIKE '%江%'; -- 查询student表中studentname中间包含江字的所有列
+
+-- in
+SELECT * FROM student WHERE `studentno` IN (1000,1003); -- 查询student表中studentno包含1000或1003的所有列
+
+-- IS NULL
+SELECT * FROM student WHERE `studentno` IN (1000,1003); -- 查询student表中studentno包含1000或1003的所有列
+```
+
+#### 3.3、联表查询
+
+![](C:\Users\HuQiaoDong\Desktop\笔记\images\join.png)
+
+```sql
+-- 联表查询
+/*
+ 联表查询思路分析
+ 1.分析需要查询的字段来自哪些表
+ 2.确定使用哪种连接查询？共7种连接查询
+ 3.确定多表之间的交叉数据（哪些数据值是相等的）
+ */
+-- join on(条件判断) 连接查询
+-- where 等值查询
+ 
+-- inner join联表查询
+SELECT s.studentno,s.studentname,g.gradename FROM student AS s INNER JOIN grade AS g WHERE s.gradeid=g.gradeid; -- 从student表和grade表中查出student表的gradeid值等于grade表的gradeid值的studentno，studentname，gradename列
+
+-- 三表联表查询，查找学生的成绩单（学号、名字、学科名、成绩）
+/*
+ 思路分析
+ 1.学号、名字来自student表，学科名来自subject表，成绩来自result表，需要从三个表中拿数据
+ 2.查询的是成绩单，因此result表作为主表
+ 3.student表和result表的交叉数据是studentno，result表和subject表的交叉数据是subjectno
+ */
+SELECT s.studentno,studentname,subjectname,r.studentresult FROM student s INNER JOIN result r ON s.`studentno`=r.`studentno` INNER JOIN `subject` sub ON r.subjectno=sub.subjectno;
+
+-- 查询学员所属的年级（学号、名字、年级名称）
+/*
+ 思路分析
+ 1.学号和名字来自student表，年级名称来自grade表
+ 2.查询的是学员的年级信息，主表为student表
+ 3.student表和grade表的交叉数据是gradeid
+ */
+SELECT `studentno`,`studentname`,`gradename` FROM student INNER JOIN grade ON student.`gradeid`=grade.`gradeid`;
+
+-- 查询科目所属的年级（科目名、年级名）
+ /*
+ 思路分析
+ 1.科目名来自subject表，年级名来自grade表
+ 2.查询的主体对象是科目，主表为subject表
+ 3.subject表和grade表的交叉数据是gradeid
+ */
+ SELECT `subjectname`,`gradename` FROM `subject` LEFT JOIN grade ON `subject`.`gradeid`=grade.`gradeid`;
+ 
+ -- 查询参加了数据结构考试的同学信息（科目名、学号、名字、年级名称、分数）
+SELECT subjectname,s.studentno,studentname,gradename,studentresult 
+FROM student s 
+INNER JOIN `result` r 
+ON r.`studentno`=s.`studentno`  
+INNER JOIN `subject` sub 
+ON sub.`subjectno`=r.`subjectno` 
+INNER JOIN `grade` g 
+ON s.gradeid=g.gradeid
+WHERE subjectname='数据库结构-1' 
+
+-- 排序 ORDERBY 字段 排序方式[ASC,DESC]
+-- SELECT subjectname,s.studentno,studentname,gradename,studentresult 
+FROM student s 
+INNER JOIN `result` r 
+ON r.`studentno`=s.`studentno`  
+INNER JOIN `subject` sub 
+ON sub.`subjectno`=r.`subjectno` 
+INNER JOIN `grade` g 
+ON s.gradeid=g.gradeid
+WHERE subjectname='数据库结构-1' 
 ```
 
