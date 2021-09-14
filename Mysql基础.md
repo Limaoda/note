@@ -459,8 +459,12 @@ INNER JOIN `subject` sub
 ON sub.`subjectno`=r.`subjectno` 
 INNER JOIN `grade` g 
 ON s.gradeid=g.gradeid
-WHERE subjectname='数据库结构-1' 
+WHERE subjectname='数据库结构-1'  
+```
 
+#### 3.4、分页和排序
+
+```sql
 -- 排序 ORDERBY 字段 排序方式[ASC,DESC]
 -- SELECT subjectname,s.studentno,studentname,gradename,studentresult 
 FROM student s 
@@ -471,5 +475,162 @@ ON sub.`subjectno`=r.`subjectno`
 INNER JOIN `grade` g 
 ON s.gradeid=g.gradeid
 WHERE subjectname='数据库结构-1' 
+
+-- 分页 LIMIT 起始值,页面大小
+-- LIMIT 0,5    1~5
+-- LIMIT 1,5    2~6
+SELECT subjectname,s.studentno,studentname,gradename,studentresult 
+FROM student s 
+INNER JOIN `result` r 
+ON r.`studentno`=s.`studentno`  
+INNER JOIN `subject` sub 
+ON sub.`subjectno`=r.`subjectno` 
+INNER JOIN `grade` g 
+ON s.gradeid=g.gradeid
+WHERE subjectname='数据库结构-1' 
+ORDER BY studentresult DESC
+LIMIT 0,5
+-- 第n页 LIMIT (n-1)*pageSize,pageSize
+-- （n-1）*pageSize = 起始值
+-- 数据总数/页面大小 = 总页数
+
+-- 查询JAVA第一学年 课程成绩排名前十的学生，并且分数要大于80的学生信息（学号，姓名，课程名称，分数）
+/*
+ 思路分析：
+ 1.学号、姓名来自学生表，课程名称来自学科表，分数来自成绩表
+ 2.要查的是学生信息，主表为学生表
+ 3.学生表和成绩表的交叉数据为studentno，成绩表和学科表的交叉数据为subjectno，先关联学生表和成绩表，再关联学科表
+ 4.结果集的学生分数要大于80且只查JAVA第一学年学科且学生排名前十（降序，分页取前十条）
+ */
+SELECT s.studentno,studentname,subjectname,studentresult
+FROM student s
+INNER JOIN result r
+ON s.`studentno`=r.`studentno`
+INNER JOIN `subject` sub
+ON r.`subjectno`=sub.`subjectno`
+WHERE subjectname='Java程序设计-1'
+AND studentresult>80
+ORDER BY studentresult DESC
+LIMIT 0,10;
+```
+
+#### 3.5  子查询
+
+```sql
+-- 查询数据库结构-1的所有考试结果（学号，科目编号，成绩），降序排列
+-- 方式一 连接查询
+SELECT studentno,s.subjectname,studentresult
+FROM `subject` s
+INNER JOIN result r
+ON s.`subjectno`=r.`subjectno`
+WHERE subjectname='数据库结构-1'
+ORDER BY r.studentresult DESC;
+
+-- 方式二 子查询（由里向外）
+SELECT studentno,subjectno,studentresult 
+FROM result
+WHERE subjectno=(
+ SELECT subjectno 
+ FROM `subject` 
+ WHERE  subjectname='数据库结构-1'
+)
+ORDER BY studentresult DESC;
+
+-- 高等数学-2学科分数不小于80分的学生的学号和姓名
+-- 方式一 联表查询
+SELECT s.studentno,studentname
+FROM student s
+INNER JOIN result r
+ON s.`studentno`=r.`studentno`
+INNER JOIN `subject` sub 
+ON sub.`subjectno`=r.`subjectno`
+WHERE studentresult>='80' AND sub.subjectname='高等数学-2';
+
+-- 方式二 联表+子查询
+SELECT s.studentno,studentname
+FROM student s
+INNER JOIN result r
+ON s.`studentno`=r.`studentno`
+WHERE r.`subjectno`=(
+ SELECT subjectno 
+ FROM `subject`
+ WHERE subjectname='高等数学-2'
+) AND studentresult>='80';
+
+-- 方式三 嵌套子查询
+ SELECT s.studentno,studentname
+ FROM student s
+ WHERE studentno = (
+  SELECT studentno 
+  FROM result 
+  WHERE studentresult>=80 
+  AND subjectno = (
+   SELECT subjectno
+   FROM `subject`
+   WHERE subjectname='高等数学-2'
+  )
+ )
+ 
+ -- 查询C语言-1前5名同学的成绩的信息（学号，姓名，分数）
+  -- 方式一 联表查询
+ SELECT s.studentno,studentname,studentresult
+ FROM student s
+ INNER JOIN result r
+ ON s.`studentno`=r.`studentno`
+ INNER JOIN `subject` sub
+ ON r.`subjectno`=sub.`subjectno`
+ WHERE subjectname='C语言-1'
+ ORDER BY studentresult DESC
+ LIMIT 0,5;
+ 
+ -- 方式二 嵌套子查询
+ SELECT s.studentno,studentname,studentresult
+ FROM student s
+ INNER JOIN result r
+ ON s.`studentno`=r.`studentno`
+ WHERE r.subjectno = (
+  SELECT subjectno
+  FROM `subject`
+  WHERE subjectname='C语言-1'
+ )
+ ORDER BY studentresult DESC
+ LIMIT 0,5;
+```
+
+### 4、Mysql函数
+
+#### 4.1、一般函数
+
+#### 4.2、聚合函数
+
+| 函数名称 | 描述   |
+| -------- | ------ |
+| COUNT()  | 计数   |
+| SUM()    | 求和   |
+| AVG()    | 求平均 |
+| MIN()    | 最小值 |
+| MAX()    | 最大值 |
+|          |        |
+
+```sql
+-- COUNT()查询一个表中有多少个记录
+SELECT COUNT(studentno) FROM student; -- 指定列行数，会忽略所有null值
+SELECT COUNT(*) FROM student; -- 所有列行数，不会忽略null值
+SELECT COUNT(1) FROM student; -- 所有列行数，不会忽略null值
+
+-- SUM()求和
+SELECT SUM(studentresult) AS 总分 FROM result; -- 求学生成绩总值
+
+-- AVG()求平均
+SELECT AVG(studentresult) AS 平均分 FROM result; -- 求学生成绩平均值
+
+-- MAX()求最大值
+SELECT MAX(studentresult) AS 最高成绩 FROM result; -- 求学生最高成绩
+
+-- MIN()求最小值
+SELECT MIN(studentresult) AS 最低成绩 FROM result; -- 求学生最低成绩
+
+-- 查询不同课程的平均分，最高分，最低分
+
 ```
 
