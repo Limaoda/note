@@ -335,7 +335,16 @@ ALTER TABLE `user` ADD CONSTRAINT `FK_roleId` FOREIGN KEY (`roleId`) REFERENCES 
 
 ```sql
 -- 查询语句 SELECT
--- SELECT [字段] FROM `表名`
+/*
+ SELECT [字段1,字段2,...] {DISTINCT}
+ FROM `表名`
+ WHERE [筛选条件]
+ GROUP BY [字段1,字段2,...]
+ HAVING [分组过滤条件]
+ ORDER BY [字段] [排序方式(DESC或ASC)]
+ LIMIT 偏移量 页数数目
+ */
+
 -- 查询所有字段
 SELECT * FROM `student`; -- 查询student表的所有列
 
@@ -597,6 +606,20 @@ WHERE r.`subjectno`=(
  LIMIT 0,5;
 ```
 
+#### 3.6、分组和过滤
+
+```sql
+-- 查询不同课程的平均分，最高分，最低分，并且平均分大于80的数据
+SELECT subjectname,AVG(studentresult) AS 平均分,MAX(studentresult),MIN(studentresult)
+FROM result r
+INNER JOIN `subject` sub
+ON r.`subjectno`=sub.`subjectno`
+GROUP BY r.subjectno
+HAVING 平均分>=80;
+```
+
+
+
 ### 4、Mysql函数
 
 #### 4.1、一般函数
@@ -630,7 +653,69 @@ SELECT MAX(studentresult) AS 最高成绩 FROM result; -- 求学生最高成绩
 -- MIN()求最小值
 SELECT MIN(studentresult) AS 最低成绩 FROM result; -- 求学生最低成绩
 
--- 查询不同课程的平均分，最高分，最低分
+```
+
+### 5、事务
+
+#### 5.1、事务基础
+
+概念：将一组SQL放在一个批次中去执行
+
+> 事务原则：ACID原则（A：原子性  C：一致性 I：隔离性 D：持久性）
+
+**原子性（Atomicity）**
+
+==要么都执行成功，要么都执行失败==
+
+事件1：A有1000块钱，给B转200块钱 
+
+事件2：B有200块钱，收到A转的200块钱
+
+如果事件1执行成功，事件2执行失败，就破坏了原子性原则
+
+**一致性（Consistency）**
+
+==事务提交前后的数据完整性要保持一致==
+
+事件1：A有1000块钱，给B转200块钱 
+
+事件2：B有200块钱，收到A转的200块钱
+
+必须保证A的钱加上B的钱总值为1200块钱
+
+**持久性(Durability)**
+
+事务一旦提交则不可逆，被持久化到数据库中
+
+**隔离性(Isolation)**
+
+多个用户并发访问数据库时，数据库为每一个用户单独开启一个事务，不被其它事务的操作所干扰，事务与事务之间相互隔离
+
+> 隔离所导致的一些问题
+
+**脏读：**
+
+一个事务读取了另外一个事务未提交的数据
+
+**不可重复读：**
+
+在一个事务内读取表中的某一行数据，多次读取结果不同（中途发生过写入或修改）
+
+**幻读：**
+
+指一个事务内读到了别的事务插入的数据，导致前后读取结果不一致的情况。
+
+#### 5.2、事务测试
+
+```sql
+-- mysql事务自动开启
+
+-- 开启事务提交
+SET autocommit = 0;
+
+-- 关闭事务提交
+SET autocommit = 1;
+
 
 ```
 
