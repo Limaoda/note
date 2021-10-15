@@ -27,5 +27,9 @@ ps -ef|grep xxxx
 
 # 杀死进程
 kill -9 PID
+
+# 给用户访问某个文件夹赋权
+chown -R es:es /opt/ # 赋权es用户访问/opt文件夹
+
 ```
 

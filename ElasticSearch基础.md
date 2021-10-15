@@ -365,3 +365,117 @@ POST请求 http://127.0.0.1:9200/user/_search
 //查不到数据，sex为完全匹配
 ```
 
+#### 索引别名
+
+**为单个原始索引添加别名**
+
+PUT请求   http://127.0.0.1:9200/user_0/_alias/user0 
+
+**批量为多个原始索引添加别名**
+
+POST请求  http://127.0.0.1:9200/_aliases
+
+方式一：
+
+```json
+{
+    "actions" : [
+        { "add" : { "index" : "user_0", "alias" : "user0" } }, //将user0指向原始索引user_0
+        { "add" : { "index" : "user_1", "alias" : "user0" } }  //将user0指向原始索引user_1
+    ]
+}
+```
+
+方式二：
+
+```json
+```
+
+
+
+#### linux部署单节点es
+
+https://www.elastic.co/cn/downloads/past-releases/elasticsearch-7-8-0
+
+1. 下载linux_x86压缩包并上传至服务器根目录
+
+2. ```shell
+   # 将根目录es压缩包解压到/opt目录下
+   tar -zxvf elasticsearch-7.8.0-linux-x86_64.tar.gz -C /opt/ 
+   
+   cd /opt/
+   
+   # 软件包重命名
+   mv elasticsearch-7.8.0 es
+   
+   # 添加新的系统用户es
+   useradd es
+   
+   # 设置新用户密码
+   passwd es
+   
+   # 给新用户授权访问/opt文件夹
+   chown -R es:es /opt/
+   ```
+
+3.  修改配置文件
+
+   **修改/opt/conifg/elasticsearch.yml文件**
+
+   加入如下配置
+
+   cluster.name: elasticsearch # 集群名称
+   node.name: node-1 # 节点名称
+   network.host: 0.0.0.0
+   http.port: 9200
+   cluster.initial_master_nodes: ["node-1"] # 设置主节点为本机
+
+   **修改/etc/security/limits.conf**
+
+   加入如下配置（每个进程可以打开的文件数限制）
+
+   es soft nofile 65536
+
+   es hard nofile 65536
+
+   **修改/etc/security/limits.d/20-nproc.conf**
+
+   es soft nofile 65536
+
+   es hard nofile 65536
+
+   **修改/etc/sysctl.conf**
+
+   加入如下配置(一个进程可以拥有的VMA(虚拟内存区域)的数量)，默认值为65536
+
+   vm.max_map_count=655360
+
+   重新加载
+   ```shell
+    sysctl -p
+   ```
+   
+4. 启动软件
+
+   切换到es用户并启动es
+
+   ```shell
+   su es
+   
+   cd /opt/es
+   
+   # 给es用户赋权es软件包操作权限
+   chown -R es:es /opt/es
+   
+   # 启动es
+   bin/elasticsearch
+   ```
+
+   ./bin/elasticsearch-plugin install https://github.com/medcl/elasticsearch-analysis-ik/releases/download/v7.4.2/elasticsearch-analysis-ik-7.4.2.zip
+   
+   
+
+  
+
+
+
