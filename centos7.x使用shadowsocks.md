@@ -191,10 +191,19 @@ curl www.google.com
 vi /etc/profile
 ```
 注释以下两行
+
 ```txt
 # export http_proxy=http://127.0.0.1:8118       #这里的端口和上面 privoxy 中的保持一致
 # export https_proxy=http://127.0.0.1:8118
 ```
+
+重新加载配置文件
+
+```shell
+source /etc/profile
+```
+
+
 
 
 
