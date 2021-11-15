@@ -15,6 +15,15 @@ redis-benchmark -h localhost -p 6379 -c 100 -n 100000
 # 查看数据库大小
 127.0.0.1:6379> dbsize
 
+# 设置Redis配置
+127.0.0.1:6379> config set [option] [value]
+
+# 读取Redis配置
+127.0.0.1:6379> config get [option] [value]
+
+# 保存配置信息至配置文件中
+127.0.0.1:6379> save
+
 # 查看当前数据库所有的key
 127.0.0.1:6379> keys *
 
@@ -80,7 +89,7 @@ config
 
 * **Redis可以用作数据库、缓存和消息中间件**
 
-* **Redis是单线程的，CPU不是Redis的瓶颈，服务器内存和网络带宽才是**
+* **6.0版本之前，Redis是单线程的，CPU不是Redis的瓶颈，服务器内存和网络带宽才是**
 * **Redis是C语言编写的**
 
 * **Redis基本所有数据全部存放在内存中，因此单线程操作效率最高，多线程会进行CPU上下文切换，非常耗时，因此对于一个内存系统，单线程操作效率最高，多次读写全部在一个CPU上进行（CPU上下文切换一次大概耗费1500~2000纳秒）**
@@ -337,6 +346,8 @@ incr uuid:1231:video:1:coin
   
 #### Redis事务
 
+##### Redis事务概述
+
 Redis中的命令具有原子性（要么同时成功要么同时失败），事务不具有原子性和隔离性（单线程，不需要隔离，需要手动执行）
 
 Redis事务性质：一次性（所有命令一次性执行）、顺序性（事务中的命令顺序执行）、排他性
@@ -390,7 +401,7 @@ set Bob:money 100
 
 set Linda:money 10
 
-watch Linda:money #监测Linda账户余额，如果在事务执行途中发生变化，则事务执行失败
+watch Linda:money #监测Linda账户余额，如果在事务执行途中发生变化，则事务执行失败（watch实际上也是将key进行保存，当事务被执行时会将key的状态与保存的key副本进行对比，如果有不一致的地方则放弃事务）
 
 # 开启事务
 multi
@@ -405,7 +416,33 @@ incrby Linda:money 20
 exec # 事务执行失败，此时Bob的账户余额为100，Linda的账户为110，无论事务是否执行成功，都会自动执行unwatch进行解锁
 ```
 
+> 乐观锁与悲观锁都是并发问题中的概念，乐观锁指的是当进行某一个操作时，默认不会被其它并发操作影响到本次操作，因此不会上锁，在mysql中我们通常给表加一个version字段，每次操作这条数据时，就进行一次version自增，当mysql事务执行时会拿到这条数据的version与执行前进行对比，如果发现version被修改，那么事务失败。悲观锁指的是当进行某一个操作时，默认会被其它并发操作影响到本次操作，因此在操作时会将数据锁住不允许修改，这时任何其它并发操作都会失败（线程阻塞），等到操作结束后拿到锁才允许其它并发线程访问。乐观锁因为不阻塞线程，因此在性能上比悲观锁要好得多。
 
+#### Redis持久化
+
+RDB（==R==edis ==D==ata==B==ase），在进行RDB时，Redis服务器的父进程会fork出一个子进程，子进程将所有内存中的Redis存储数据全部写入到RDB临时文件中，这个过程不会影响到Redis父进程的服务，临时文件写入完成后，会替换掉上一次的正式RDB文件，此时子进程退出。Redis默认的持久化方式就是RDB，因此不需要额外在配置文件中进行配置。redis保存的文件是dump.rdb
+
+RDB的自动触发机制
+
+1.满足save规则
+
+2.执行flushall命令
+
+3.退出redis或执行shutdown（默认进行save）
+
+优点：
+
+适合大规模的数据恢复
+
+对数据的完整性要求不高
+
+缺点：
+
+需要在一段时间内连续进行操作才会触发，意外宕机时，即使save 1 1，最后一条数据仍可能无法保存
+
+fork的子进程会占用一定的内存
+
+> 在生产环境中，有时会对dump.rdb文件进行备份
 
 #### Redis配置文件详解
 
@@ -492,7 +529,7 @@ redis.conf
  # you are sure you want clients from other hosts to connect to Redis
  # even if no authentication is configured, nor a specific set of interfaces
  # are explicitly listed using the "bind" directive.
- protected-mode yes # 是否为受保护模式，一般为开启状态
+ protected-mode yes # 是否为受保护模式，一般为开启状态，开启状态下无法远程连接
  
  # Accept connections on the specified port, default is 6379 (IANA #815344).
  # If port 0 is specified Redis will not listen on a TCP socket.
@@ -595,7 +632,7 @@ logfile /var/log/redis/redis.log # 生成的日志文件存放位置
 databases 16 # 数据库数量，默认为16个
 ```
 
-##### 快照
+##### 快照（持久化）
 
 > redis是个内存型数据库，如果没有持久化，断电会丢失数据，快照可以防止数据丢失
 
@@ -620,11 +657,11 @@ databases 16 # 数据库数量，默认为16个
 #
 #   save ""
 
-# 如果900秒内，有至少1个key进行了修改操作，则进行持久化
+# 如果900秒内，有至少1个key进行了修改操作，则进行持久化（触发rdb）
 save 900 1
-# 如果300秒内，有至少10个key进行了修改操作，则进行持久化
+# 如果300秒内，有至少10个key进行了修改操作，则进行持久化（触发rdb）
 save 300 10
-# 如果60秒内，有至少10000个key进行了修改操作，则进行持久化
+# 如果60秒内，有至少10000个key进行了修改操作，则进行持久化（触发rdb）
 save 60 10000
 
 # By default Redis will stop accepting writes if RDB snapshots are enabled
@@ -946,7 +983,7 @@ redis-cli
 127.0.0.1:6379> auth $password #ok
 ```
 
-##### 登陆有密码的Redis
+登陆有密码的Redis
 
 ```bash
 # 登录时输入密码
@@ -959,5 +996,54 @@ redis-cli -p $port
 127.0.0.1:6379> auth $password
 ```
 
-#### 
+##### 不要使用默认端口
+
+6379是redis的默认端口号，尽量修改为自定义的端口号，这样即便被别人知道ip和密码，对方不知道端口号也无法访问
+
+```bash
+# redis.conf文件
+port 6379 # 改为自定义的端口号
+
+# port 6700
+```
+
+##### 禁止root用户启动
+
+为 Redis 服务创建单独的用户和home目录，使用普通用户启动，安全性往往高很多；
+业务程序永久别用root用户运行。
+
+##### 在信任的内网运行，尽量避免有公网访问
+
+
+
+##### 限制redis文件目录访问权限
+
+
+
+##### 禁止任意地址连接
+
+```bash
+# redis.conf文件
+bind 0.0.0.0 # 改为允许连接的ip白名单
+
+# bind 127.0.0.1 10.254.8.4
+```
+
+##### 禁用或重命名危险命令
+
+```bash
+ # redis.conf文件
+ rename-command FLUSHALL "" # 禁用清空所有数据库命令
+ rename-command FLUSHDB "" # 禁用清空当前数据库命令
+ rename-command KEYS "" 
+ rename-command CONFIG "" # 禁用配置相关命令
+```
+
+
+
+
+
+
+
+ 
 
