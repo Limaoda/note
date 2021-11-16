@@ -1,3 +1,55 @@
+#### Redis基本介绍
+
+##### 什么是Redis？
+
+Redis （==Re==mote ==Di==ctionary ==S==erver）即远程字典服务，是一个使用 C 语言写成的，开源的高性能key-value非关系**缓存**数据库（Nosql结构化数据库）。它支持存储的value类型相对更多，包括string(字符串)、list(链表)、set(集合)、zset(sorted set --有序集合)和hash（哈希类型）。Redis的数据**都基于缓存**的，所以很快，每秒可以处理超过 10万次读写操作，是已知性能最快的Key-Value DB，也提供了**多种语言API**。Redis**也可以实现数据写入磁盘中**（RBD、AOF持久化），保证了数据的安全不丢失，而且Redis的操作是原子性的。
+
+##### Redis能干嘛？
+
+1、内存存储、持久化，内存是断电即失的，因此需要进行持久化
+
+2、效率高，可以用于高速缓冲
+
+如下图所示，我们在碰到需要执行耗时特别久，且结果不频繁变动的SQL，就特别适合将运行结果放入缓存。这样，后面的请求就去缓存中读取，使得请求能够**迅速响应**。
+
+![](/Users/saitama/Documents/note/images/image-20211115223850897.png)
+
+3、发布订阅系统
+
+4、地图信息分析
+
+使用Geospatial特殊类型可以很方便地进行地图信息的分析（该数据类型底层是Zset）
+
+5、计数器（关注量、点赞，浏览量等）
+
+使用incrby和decrby可以很轻易地实现计数操作
+
+##### Redis的特性？
+
+**与类似的非关系型缓存数据库mamcache相比**，redis具有更**多样的数据类型**，并且可以**支持持久化**，并且在ttl支持上更加**灵活**（可以给已经被创建的key设置过期时间），除此之外，当因为不可控原因导致数据丢失，redis可以通过AOF进行数据恢复（**灾难恢复**）
+
+**与非关系型文档数据库mongodb相比**，redis偏向于缓存，而mongodb更类似于关系型数据库（具有丰富的查询语言），**性能方面**，两者都依赖内存，但redis的性能比mongodb更胜一筹。redis可以为数据设置时效性，mongodb则不行。**一致性方面**，redis支持简单的事务操作（只能保证顺序执行），mongodb则不支持事务。**可靠性方面**，mongodb在1.8版本之后采用binlog方式（MySQL同样采用该方式），而redis依赖快照进行持久化，AOF增强可靠性的同时，影响了访问性能。mongodb在可靠性方面优于redis，mongodb与redis有着不同的应用场景，mongodb更适用于较大数据量的存储，而redis更偏向于较小数据量的运算。
+
+**与关系型数据库mysql相比**，redis因为是内存型数据库，而mysql是以磁盘存储为主，内存仅用于缓存小部分数据，redis在读写性能必定远远领先于mysql。两者类型和应用场景不同，不具备太多的可比性。
+
+
+
+
+
+拓展：
+
+Nosql的四大分类
+
+**KV键值对型数据库**（Redis、Memcache、Tair）：内容缓冲，主要用于处理大量数据的高访问负载，也可用于日志系统
+
+**文档型数据库**（MongoDB、ConchDB）：用于海量数据存储，Web应用常用
+
+**列存储数据库**（Hbase）：常用于大数据分析统计、分布式文件系统
+
+**图关系数据库**（Neo4j、InfoGrid）：常用于广告推荐、朋友圈社交网络
+
+
+
 #### 性能测试(benchmark)
 
 ```shell
@@ -343,7 +395,11 @@ incr uuid:1231:video:1:coin
   zdecrby [key] [increment] [member]
   ```
   
-  
+* **Geospatial（地理位置）**
+
+* **Hyperloglog（统计分析**：统计不重复元素个数，2^64只占12kb内存0.8%的错误率
+
+* **Bitmap（位图）**：操作二进制位来记录。常用于统计用户活跃不活跃，登陆没登陆等
 #### Redis事务
 
 ##### Redis事务概述
@@ -955,8 +1011,16 @@ auto-aof-rewrite-min-size 64mb
 aof-load-truncated yes
 ```
 
+#### Redis内存溢出控制策略（内存淘汰机制）
 
-
+|      策略       |                             说明                             |
+| :-------------: | :----------------------------------------------------------: |
+|   noeviction    | 默认策略，不会删除任何数据，拒绝所有写入操作并返回客户端错误信息（error）OOM command not allowed when used memory |
+|  volatile-lru   | 只对设置有超时属性的Key根据LRU算法执行删除操作，如果没有可删除的Key，则回退到noeviction策略 |
+|   allkeys-lru   | 针对所有的key，根据LRU算法执行删除操作直到回收到足够内存空间 |
+| allkeys-random  |              随机删除所有的键，直到腾出足够空间              |
+| volatile-random |     针对带有过期属性的键，进行删除操作，直到腾出足够空间     |
+|  volatile-ttl   | 根据键值对象的ttl属性，删除最近将要过期数据。如果没有，则回退到noviction策略 |
 
 
 #### Redis安全机制 
