@@ -1,0 +1,16 @@
+{
+    "workbench.colorCustomizations": {
+        "[Tiny Light]": {
+            "panel.background": "#eee8d5",
+            "sideBar.background": "#eee8d5",
+            "activityBar.activeBackground": "#eee8d5",
+            "activityBar.background": "#eee8d5",
+            "activityBar.foreground": "#000000",
+            "titleBar.activeBackground": "#645326",
+            "titleBar.activeForeground": "#faf9f9ec"
+        },
+        "activityBar.background": "#1E3037",
+        "titleBar.activeBackground": "#2B434C",
+        "titleBar.activeForeground": "#F8FAFB"
+    }
+}
