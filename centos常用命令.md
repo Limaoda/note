@@ -22,6 +22,9 @@ ip address
 #查看cpu信息
 lscpu
 
+# 查看端口占用
+netstat -lnp|grep 9200
+
 # 查看进程
 ps -ef|grep xxxx
 

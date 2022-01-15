@@ -1,5 +1,7 @@
 ES HTTP操作索引只支持PUT,DELETE,HEAD,GET不支持POST，因为POST不具有幂等性，而ES不可能存在相同的索引
 
+### ES操作
+
 #### 索引-创建
 
 PUT请求  http://127.0.0.1:9200/{indexName}
@@ -113,6 +115,186 @@ GET/POST请求体body携参 http://127.0.0.1:9200/{indexName}/_search
   "size":2 //单页数据量
 }
 ```
+
+#### 文档-复杂查询
+
+##### 查询和过滤
+
+GET/POST请求体body携参 http://127.0.0.1:9200/{indexName}/_search
+
+```json
+// 查询结构
+{
+    QUERY_NAME: {
+        FIELD_NAME: {
+            ARGUMENT: VALUE,
+            ARGUMENT: VALUE,...
+        }
+    }
+}
+   
+// 查询并匹配字段tweet中包含elasticsearch字符串的文档
+{
+    "query": {
+        "match": {
+            "tweet": "elasticsearch"
+        }
+    }
+}
+
+// 组合查询
+{
+    "query":{
+        "bool": {
+            //必须词，只匹配tweet字段值出现elasticsearch字符串的文档
+        	"must":     { "match": { "tweet": "elasticsearch" }},
+            //排除词，排除掉name字段值出现mary的文档
+        	"must_not": { "match": { "name":  "mary" }},
+            //包含词，匹配tweet字段值出现full text的文档
+       	 	"should":   { "match": { "tweet": "full text" }},
+            //过滤器，只获取age字段值大于30的文档
+        	"filter":   { "range": { "age" : { "gt" : 30 }} }
+    	}
+    }
+
+}
+
+// 组合查询子句可以嵌套
+{
+    "query":{
+        "bool": {
+            //必须词，只匹配tweet字段值出现elasticsearch字符串的文档
+        	"must":     { "match": { "tweet": "elasticsearch" }},
+            //排除词，排除掉name字段值出现mary的文档
+        	"must_not": { "match": { "name":  "mary" }},
+            //包含词，匹配tweet字段值出现full text的文档
+       	 	"should":   [
+                { 
+                    "match": { "tweet": "full text" }
+                }
+                 {
+                	"bool": {
+                		"must":{
+                			"match":{
+                				"xxxx"
+                			}
+                		}
+    					"must_not":{
+                			"match":{
+                				"xxxx"
+                			}
+						}
+                	}
+                }
+            ],
+            //过滤器，只获取age字段值大于30的文档
+        	"filter":   { "range": { "age" : { "gt" : 30 }} }
+    	}
+    }
+
+}
+```
+
+##### 重要查询方式
+
+###### match_all查询
+
+```json
+// 匹配所有文档，是默认的查询方式，一般与过滤器组合使用
+{
+    "query":{
+        "match_all":{
+            
+        }
+    }
+}
+```
+
+###### match查询
+
+###### multi_match查询
+
+```json
+{
+  "query": {
+    "multi_match": {
+      "query": "东方证券",
+      "fields": ["news_content","news_title"]
+    }
+  }
+}
+```
+
+###### range查询
+
+```json
+{
+  "query": {
+    "range": {
+      "news_type": {
+        "gte": 25,
+        "lte": 27
+      }
+    }
+  }
+}
+// gt 大于 gte 大于等于 lt 小于 lte 小于等于
+```
+
+###### term查询
+
+```json
+// 精确匹配，不会进行分词
+{
+  "query": {
+    "term": {
+      "news_type": {
+        "value": 27
+      }
+    }
+  }
+}
+```
+
+
+
+###### terms查询
+
+```json
+// 精确匹配，可匹配多个字符串，或关系
+{
+  "query": {
+    "terms": {
+      "news_type": [27,25,22]
+    }
+  }
+}
+```
+
+
+
+###### exists查询和missing查询
+
+```json
+// 是否存在news_type, 查询结果返回所有存在字段news_typed
+{
+  "query": {
+    "exists": {
+      "field": "news_type"
+    }
+  }
+}
+```
+
+
+
+##### 组合多查询
+
+
+
+
+
+
 
 #### 文档-筛选查询结果
 
@@ -388,12 +570,11 @@ POST请求  http://127.0.0.1:9200/_aliases
 
 方式二：
 
-```json
-```
 
 
 
-#### linux部署单节点es
+
+### linux部署单节点es
 
 https://www.elastic.co/cn/downloads/past-releases/elasticsearch-7-8-0
 
@@ -475,7 +656,7 @@ https://www.elastic.co/cn/downloads/past-releases/elasticsearch-7-8-0
    
    
 
-  
+
 
 
 
