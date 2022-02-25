@@ -58,9 +58,21 @@ cd /bin
 redis-benchmark -h localhost -p 6379 -c 100 -n 100000
 ```
 
+#### 解决redis-cli中文乱码问题
+
+```bash
+# redis-cli 中文乱码问题(--raw参数)
+redis-cli -p ${port} --raw
+```
+
+
+
 #### 基本操作
 
 ```bash
+# 输入密钥
+127.0.0.1:6379> auth ${password}
+
 # 切换数据库，redis默认有16个数据库[0-15],默认使用0
 127.0.0.1:6379> select [index]
 
@@ -117,6 +129,9 @@ redis-benchmark -h localhost -p 6379 -c 100 -n 100000
 
 # 删除某个key
 127.0.0.1:6379> del [key]
+
+# 查看内存占用情况
+127.0.0.1:6379> info memory
 ```
 
 #### 危险操作
