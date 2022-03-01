@@ -58,6 +58,9 @@ vim  /etc/docker/daemon.json
   "log-opts": {"max-size":"200m", "max-file":"3"}
 }
 
+# 重启docker使配置文件生效
+systemctl restart docker
+
 # 查看docker相关配置信息，验证刚刚的配置文件是否生效
 docker info
 
@@ -76,6 +79,9 @@ ip address
 # 全局暴露master主机的ip
 export MASTER_IP=192.168.0.101
 
+# Kubernetes 容器组所在的网段，该网段安装完成后，由 kubernetes 创建，事先并不存在于您的物理网络中，后续被Kubernetes的容器网络使用
+export POD_SUBNET=10.100.0.0/16
+
 # 替换 apiserver.demo 为 您想要的 dnsName
 export APISERVER_NAME=k8smaster
 
@@ -89,8 +95,6 @@ curl -sSL https://kuboard.cn/install-script/v1.21.x/init_master.sh | sh -s 1.21.
 ### 5、设置master网络
 
 ```bash
-# Kubernetes 容器组所在的网段，该网段安装完成后，由 kubernetes 创建，事先并不存在于您的物理网络中，后续被Kubernetes的容器网络使用
-export POD_SUBNET=10.100.0.0/16
 
 # calico作为网络插件
 # kubectl apply -f https://kuboard.cn/install-script/v1.21.x/calico-operator.yaml 
@@ -170,6 +174,9 @@ kubeadm token create --print-join-command
 ```bash
 # kubeadm token create 命令的输出
 export MASTER_IP=192.168.0.101
+
+# 将master主机信息写入子节点服务器host中
+echo "192.168.0.23   k8smaster" >> /etc/hosts
 
 # 子节点加入集群
 kubeadm join apiserver.demo:6443 --token mpfjma.4vjjg8flqihor4vt     --discovery-token-ca-cert-hash sha256:6f7a8e40a810323672de5eee6f4d19aa2dbdb38411845a1bf5dd63485c43d303
@@ -683,7 +690,6 @@ metadata:
   namespace: default
 spec:
   rules:
-
   - host: nginx.api.test.hxcapital.cn
     http:
       paths:
@@ -706,13 +712,11 @@ kubectl get ing ingress-http -n default
 kubectl describe ing ingress-http  -n default
 ```
 
-#### dns配置
+#### 配置dns解析
 
-将tomcat.api.test.hxcapital.cn配置到ingress所在的两台服务器上(port: 8080)
+ingress所在工作节点ip
 
-将nginx.api.test.hxcapital.cn配置到ingress所在的两台服务器上(port: 80)
-
-### Kuborad
+### 13、Kuborad
 
 #### 参考
 
@@ -730,8 +734,84 @@ kubectl describe ing ingress-http  -n default
 
 ```txt
 http://kuboard.tech.hxcapital.cn:30080
-
 输入初始用户名和密码，并登录
 用户名： admin
 密码： Kuboard123
 ```
+
+### 14、常用命令
+
+#### 其它
+
+```bash
+kubectl apply -f ${xxxx.yaml}
+
+# kubectl命令帮助文档 -h参数
+# 查看kubectl所有操作
+kubectl -h/kubectl --help
+
+# 查看create命令的所有option
+kubectl create -h
+....
+```
+
+#### 创建
+
+```bash
+# 参数
+--image # 镜像
+--replicas # 副本
+# 创建一个命名空间（命名空间用于隔离资源[service、deployment、pod]）
+kubectl create ns ${namespace} 
+
+# 创建一个pod容器(拉取一个容器镜像并运行容器)
+kubectl run ${pod_name} --image ${image_name}
+
+# 创建一个deployment控制器并指定副本
+kubectl run ${deploy_name} --image ${image_name} --
+```
+
+#### 删除
+
+```bash
+# 删除指定命名空间下的所有资源 
+kubectl delete all --all -n ${namespace}
+
+# 删除指定容器
+kubectl delete pod ${pod_name}/${pod_id}
+
+# 删除指定deployment
+kubectl delete deploy ${deploy_name}/${deploy_id}
+
+# 删除指定service
+kubectl delete svc ${service_name}/${service_id}
+
+# 删除
+```
+
+#### 查看
+
+```bash
+# 参数
+-owide # 拓展信息
+-A # 全部命名空间资源
+-n # 指定命名空间
+```
+
+
+
+#### 修改
+
+3389
+
+
+
+### 搭建新环境
+
+1、修改oms-test.yml的所有namespace为test1并另存为oms-test1.yml
+
+2、在test控制节点的服务器上拉取ingress-nginx镜像，修改两个配置文件
+
+3、配置反向代理，将service暴露出的访问端口使用域名做解析
+
+4、将ingress配置文件和反向代理配置文件应用于k8s集群
