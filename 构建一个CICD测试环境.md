@@ -26,12 +26,12 @@ host：192.168.0.166 harborserver
 
 外部访问配置hosts：
 
-116.205.131.49 jenkins.tech.hxcapital.cn
-116.205.131.49 harbor.tech.hxcapital.cn
-116.205.131.49 nexus3.tech.hxcapital.cn
-116.205.131.49 nacos.tech.hxcapital.cn
-116.205.131.49 kuboard.tech.hxcapital.cn
-116.205.131.49 grafana.tech.hxcapital.cn
+124.71.96.154 jenkins.tech.hxcapital.cn
+124.71.96.154 harbor.tech.hxcapital.cn
+124.71.96.154 nexus3.tech.hxcapital.cn
+124.71.96.154 nacos.tech.hxcapital.cn
+124.71.96.154 kuboard.tech.hxcapital.cn
+124.71.96.154 grafana.tech.hxcapital.cn
 116.205.131.49 oms.test.hxcapital.cn
 116.205.131.49 oms.test1.hxcapital.cn
 116.205.131.49 oms.test2.hxcapital.cn
