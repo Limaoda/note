@@ -10,6 +10,8 @@
 
 全局环境：jdk+maven、git、nodejs+npm
 
+host：192.168.0.166 harborserver
+
 
 
 一台或多台worker节点服务器 （公网ip：116.205.131.49  内网ip：192.168.0.128）
@@ -17,6 +19,8 @@
 ---可用端口： 80
 
 服务：k8s、docker
+
+host：192.168.0.166 harborserver
 
 
 
