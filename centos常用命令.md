@@ -59,3 +59,19 @@ ll -h
 
 ```
 
+#### 保持ssh连接
+
+```bash
+vi /etc/ssh/sshd_config
+
+# 找到以下两句：
+#ClientAliveInterval 0
+#ClientAliveCountMax 3
+
+# 修改为：
+ClientAliveInterval 600
+ClientAliveCountMax 30
+```
+
+
+

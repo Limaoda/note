@@ -52,7 +52,7 @@ vim  /etc/docker/daemon.json
 # max-size设置日志文件的最大容量，max-file设置文件句柄的最大打开个数，graph设置挂载数据的物理机目录路径
 {
   "registry-mirrors": ["https://rnysp4y7.mirror.aliyuncs.com"],
-  "insecure-registries":["harborserver:9103"],
+  "insecure-registries":["harborserver:9103","harborserver:9103"],
   "graph":"/opt/data/docker",
   "log-driver":"json-file",
   "log-opts": {"max-size":"200m", "max-file":"3"}
@@ -180,13 +180,13 @@ echo "192.168.0.23   k8smaster" >> /etc/hosts
 
 # 子节点加入集群
 kubeadm join apiserver.demo:6443 --token mpfjma.4vjjg8flqihor4vt     --discovery-token-ca-cert-hash sha256:6f7a8e40a810323672de5eee6f4d19aa2dbdb38411845a1bf5dd63485c43d303
- 
-# 等待readyed
-kubectl get nodes
 ```
-
+在master节点上
 
 ```bash
+# 等待readyed
+kubectl get nodes
+
 # 可选
 systemctl daemon-reload
 systemctl restart kubelet
@@ -806,12 +806,3 @@ kubectl delete svc ${service_name}/${service_id}
 
 
 
-### 搭建新环境
-
-1、修改oms-test.yml的所有namespace为test1并另存为oms-test1.yml
-
-2、在test控制节点的服务器上拉取ingress-nginx镜像，修改两个配置文件
-
-3、配置反向代理，将service暴露出的访问端口使用域名做解析
-
-4、将ingress配置文件和反向代理配置文件应用于k8s集群
